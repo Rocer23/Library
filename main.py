@@ -54,32 +54,36 @@ def read_book(book_title: str, db: Session = Depends(get_db)):
     return db_book
 
 
-# Показ книг по автору
-# @app.get("/book/author/{author}", response_model=List[schemas.Book])
-# def get_books_on_author(author: str):
-#     books_by_author = [book for book in library if book.author == author]
-#     if not books_by_author:
-#         raise HTTPException(status_code=400, detail="Author not found")
-#     return books_by_author
-
-
-# Редагування книги по Title
-# @app.put("/book/{book_title}", response_model=Book)
-# def update_book(book_title: schemas.Book, book_update: schemas.Book):
-#     for idx, book in enumerate(library):
-#         if book.title == book_title:
-#             updated_book = book.copy(update=book_update.dict(exclude_unset=True))
-#             library[idx] = updated_book
-#             return updated_book
-#
-#     raise HTTPException(status_code=400, detail="Book not found")
-
-
 # Видалення книги
-# @app.delete("/book/{book_title}", response_model=Book)
-# def delete_book(book_title: Book):
-#     for idx, book in enumerate(library):
-#         if book.title == book_title:
-#             return library.pop(idx)
-#
-#     raise HTTPException(status_code=400, detail="Book not found")
+@app.delete("/book/{book_title}", response_model=schemas.Book)
+def delete_book(book_title: str, db: Session = Depends(get_db)):
+    db_book = crud.delete_book(db, book_title=book_title)
+    if db_book is None:
+        raise HTTPException(status_code=400, detail="Book not found")
+    return db_book
+
+
+# Редагування книги по Tittle
+@app.put("/book/{book_title}", response_model=schemas.Book)
+def update_book(book_title: str, book_update: schemas.BookUpdate, db: Session = Depends(get_db)):
+    db_book = crud.update_book(db, book_title=book_title, book_update=book_update)
+    if db_book is None:
+        raise HTTPException(status_code=400, detail="Book not found")
+    return db_book
+
+
+# Показ книг по автору
+@app.get("/book/author/{author_name}", response_model=List[schemas.Book])
+def get_books_by_author(author_name: str, db: Session = Depends(get_db)):
+    books = crud.get_books_by_author(db, author_name=author_name)
+    if books is None:
+        raise HTTPException(status_code=400, detail="Author not found")
+    return books
+
+
+# Видалення автора по ID
+@app.delete("/book/author/{author_name}", response_model=schemas.Author)
+def delete_author(author_name: int, db: Session = Depends(get_db)):
+    db_author = crud.delete_author(db, author_name=author_name)
+    if db_author is None:
+        raise HTTPException(status_code=400, detail="Author not found")

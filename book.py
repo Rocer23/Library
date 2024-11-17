@@ -33,9 +33,9 @@ def read_books():
 
 # Книги по Title
 @app.get("/books/{book_title}", response_model=Book)
-def read_book(book_title: Book):
+def read_book(title: Book):
     for book in library:
-        if book.title == book_title:
+        if book.title == title:
             return book
 
     raise HTTPException(status_code=400, detail="Book not found")
@@ -52,9 +52,9 @@ def get_books_on_author(author: str):
 
 # Редагування книги по Title
 @app.put("/books/{book_title}", response_model=Book)
-def update_book(book_title: Book, book_update: Book):
+def update_book(title: Book, book_update: Book):
     for idx, book in enumerate(library):
-        if book.title == book_title:
+        if book.title == title:
             updated_book = book.copy(update=book_update.dict(exclude_unset=True))
             library[idx] = updated_book
             return updated_book
@@ -64,9 +64,9 @@ def update_book(book_title: Book, book_update: Book):
 
 # Видалення книги
 @app.delete("/books/{book_title}", response_model=Book)
-def delete_book(book_title: Book):
+def delete_book(title: Book):
     for idx, book in enumerate(library):
-        if book.title == book_title:
+        if book.title == title:
             return library.pop(idx)
 
     raise HTTPException(status_code=400, detail="Book not found")
