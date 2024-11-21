@@ -51,7 +51,7 @@ def create_book(db: Session, book: schemas.BookCreate):
     return db_book
 
 
-def delete_author(db: Session, author_name: int):
+def delete_author(db: Session, author_name: str):
     db_author = db.query(models.Author).filter(models.Author.author == author_name).first()
     if db_author:
         db.query(models.Book).filter(models.Book.author_id == author_name).delete()
@@ -79,3 +79,15 @@ def update_book(db: Session, book_title: str, book_update: schemas.BookUpdate):
         db.refresh(db_book)
 
     return db_book
+
+
+def update_author(db: Session, author_id: int, author_update: schemas.AuthorUpdate):
+    db_author = db.query(models.Author).filter(models.Author.id == author_id).first()
+    if db_author:
+        for key, value in author_update.dict(exclude_unset=True).items():
+            setattr(db_author, key, value)
+        db.commit()
+        db.refresh(db_author)
+
+    return db_author
+

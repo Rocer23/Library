@@ -1,16 +1,22 @@
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from uuid import UUID, uuid4
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from typing import List
 from sqlalchemy.orm import Session
 from db import crud, models, schemas
 from db.database import SessionLocal, engine
+import uvicorn
 
 
 models.Base.metadata.create_all(bind=engine)
 
 # Створення екземпляру FastAPI
 app = FastAPI()
+
+
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
 
 def get_db():
@@ -21,15 +27,15 @@ def get_db():
         db.close()
 
 
-# Створення Моделі
-# class Book(BaseModel):
-#     # id: Optional[UUID] = None
-#     title: str
-#     pages: int = Field(..., gt=10)
-#     author: str = Field(..., min_length=3, max_length=30)
+@app.get("/", response_class=HTMLResponse)
+async def read_index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
-# library = []
+@app.get("/books/", response_class=HTMLResponse)
+async def show_books(request: Request, db: Session = Depends(get_db)):
+    books = crud.get_books(db, skip=0, limit=50)
+    return templates.TemplateResponse("books.html", {"request": request, "books": books})
 
 
 # Створення книги
@@ -73,7 +79,7 @@ def update_book(book_title: str, book_update: schemas.BookUpdate, db: Session = 
 
 
 # Показ книг по автору
-@app.get("/book/author/{author_name}", response_model=List[schemas.Book])
+@app.get("/author/{author_name}", response_model=List[schemas.Book])
 def get_books_by_author(author_name: str, db: Session = Depends(get_db)):
     books = crud.get_books_by_author(db, author_name=author_name)
     if books is None:
@@ -82,8 +88,22 @@ def get_books_by_author(author_name: str, db: Session = Depends(get_db)):
 
 
 # Видалення автора по ID
-@app.delete("/book/author/{author_name}", response_model=schemas.Author)
-def delete_author(author_name: int, db: Session = Depends(get_db)):
+@app.delete("/author/{author_name}", response_model=schemas.Author)
+def delete_author(author_name: str, db: Session = Depends(get_db)):
     db_author = crud.delete_author(db, author_name=author_name)
     if db_author is None:
         raise HTTPException(status_code=400, detail="Author not found")
+
+
+# Редагування автора
+@app.put("/author/{author_id}", response_model=schemas.Author)
+def update_author(author_id: int, author_update: schemas.AuthorUpdate, db: Session = Depends(get_db)):
+    db_author = crud.update_author(db, author_id=author_id, author_update=author_update)
+    if db_author is None:
+        raise HTTPException(status_code=400, detail="Author not found")
+
+    return db_author
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
