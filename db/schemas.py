@@ -9,6 +9,10 @@ class AuthorCreate(AuthorBase):
     pass
 
 
+class AuthorUpdate(AuthorBase):
+    pass
+
+
 class Author(AuthorBase):
     id: int
 
