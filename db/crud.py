@@ -1,5 +1,27 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
+from passlib.context import CryptContext
+
+
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
+
+
+def get_user_by_login(db: Session, login: str):
+    return db.query(models.User).filter(models.User.login == login).first()
+
+
+def create_user(db: Session, user: schemas.UserCreate):
+    hashed_password = pwd_context.hash(user.password)
+    db_user = models.User(
+        login=user.login,
+        hashed_password=hashed_password
+    )
+
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    return db_user
 
 
 def get_author_by_name(db: Session, author: str):
@@ -57,8 +79,8 @@ def delete_author(db: Session, author_name: str):
         db.query(models.Book).filter(models.Book.author_id == author_name).delete()
         db.delete(db_author)
         db.commit()
-
-    return db_author
+        return db_author
+    return None
 
 
 def delete_book(db: Session, book_title: str):
@@ -66,8 +88,8 @@ def delete_book(db: Session, book_title: str):
     if db_book:
         db.delete(db_book)
         db.commit()
-
-    return db_book
+        return db_book
+    return None
 
 
 def update_book(db: Session, book_title: str, book_update: schemas.BookUpdate):
