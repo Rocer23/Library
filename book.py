@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from uuid import UUID, uuid4
 
 # Створення екземпляру FastAPI
 app = FastAPI()
@@ -9,7 +8,6 @@ app = FastAPI()
 
 # Створення Моделі
 class Book(BaseModel):
-    # id: Optional[UUID] = None
     title: str
     pages: int = Field(..., gt=10)
     author: str = Field(..., min_length=3, max_length=30)
@@ -33,7 +31,7 @@ def read_books():
 
 # Книги по Title
 @app.get("/books/{book_title}", response_model=Book)
-def read_book(title: Book):
+def read_book(title: str):
     for book in library:
         if book.title == title:
             return book
@@ -52,7 +50,7 @@ def get_books_on_author(author: str):
 
 # Редагування книги по Title
 @app.put("/books/{book_title}", response_model=Book)
-def update_book(title: Book, book_update: Book):
+def update_book(title: str, book_update: Book):
     for idx, book in enumerate(library):
         if book.title == title:
             updated_book = book.copy(update=book_update.dict(exclude_unset=True))
@@ -64,7 +62,7 @@ def update_book(title: Book, book_update: Book):
 
 # Видалення книги
 @app.delete("/books/{book_title}", response_model=Book)
-def delete_book(title: Book):
+def delete_book(title: str):
     for idx, book in enumerate(library):
         if book.title == title:
             return library.pop(idx)
